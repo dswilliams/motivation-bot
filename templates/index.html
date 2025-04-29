@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Motivation Bot</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+      // Set marked.js to respect single line breaks as <br>
+      marked.setOptions({
+        breaks: true
+      });
+    </script>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --background-color: #f8fafc;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-bottom: 2rem;
+            font-size: 2.5rem;
+        }
+
+        .input-container {
+            margin-bottom: 2rem;
+        }
+
+        .provider-selection {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        select, input {
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            width: 100%;
+        }
+
+        .api-key-container {
+            position: relative;
+            width: 100%;
+        }
+
+        .api-key-input {
+            font-family: monospace;
+            letter-spacing: 1px;
+            background-color: #f8fafc;
+            border: 2px solid var(--border-color);
+            padding-right: 40px; /* Space for the toggle button */
+        }
+
+        .toggle-api-key {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            padding: 0;
+            font-size: 0.9rem;
+        }
+
+        .toggle-api-key:hover {
+            color: var(--secondary-color);
+        }
+
+        .api-key-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            resize: vertical;
+            min-height: 120px;
+            margin-bottom: 1rem;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: var(--secondary-color);
+        }
+
+        .response-container {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            display: none;
+        }
+
+        .audio-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .audio-controls button {
+            padding: 0.5rem 1rem;
+        }
+
+        .typing-animation {
+            overflow: hidden;
+            white-space: normal; /* Ensure normal HTML/Markdown rendering */
+        }
+
+        .typing-animation span {
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 2rem 0;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid var(--border-color);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #b3c6ff;
+            border-top: 3px solid #2563eb;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg);}
+            100% { transform: rotate(360deg);}
+        }
+
+        .audio-progress {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1rem;
+            color: #2563eb;
+            margin-bottom: 0.5rem;
+        }
+
+        #responseText p {
+            margin-bottom: 1.2em;
+        }
+
+        #responseText li {
+            margin-bottom: 0.6em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Motivation Bot</h1>
+        
+        <div class="input-container">
+            <div class="provider-selection">
+                <select id="providerSelect">
+                    <option value="perplexity">Perplexity</option>
+                    <option value="openai">OpenAI</option>
+                    <option value="gemini">Google Gemini</option>
+                    <option value="huggingface">Hugging Face</option>
+                </select>
+                <div class="api-key-container">
+                    <input type="text" 
+                           id="apiKey" 
+                           class="api-key-input" 
+                           placeholder="Enter API Key" 
+                           autocomplete="off" 
+                           data-form-type="other"
+                           data-lpignore="true"
+                           data-1p-ignore="true"
+                           data-kwimpalastart="true"
+                           data-kwimpalaid="1234567890"
+                           name="api_key">
+                    <button type="button" class="toggle-api-key" onclick="toggleApiKeyVisibility()">Show</button>
+                </div>
+            </div>
+            <textarea id="userInput" placeholder="What's on your mind? Share your thoughts, challenges, or goals..."></textarea>
+            <button onclick="getMotivation()">Get Motivated</button>
+        </div>
+
+        <div class="loading" id="loading"></div>
+
+        <div class="response-container" id="responseContainer">
+            <div id="audioProgress" class="audio-progress" style="display:none;">
+                <span class="spinner"></span>
+                <span>Generating audio…</span>
+            </div>
+            <div class="audio-controls" id="audioControls" style="display:none;">
+                <button onclick="playAudio()" id="playButton">Play Audio</button>
+                <button onclick="stopAudio()" id="stopButton">Stop Audio</button>
+            </div>
+            <button id="generateAudioButton" style="display:none;" onclick="generateAudio()">Generate Audio</button>
+            <div id="responseText" class="typing-animation"></div>
+        </div>
+    </div>
+
+    <script>
+        // Simple encryption/decryption functions
+        function encrypt(text, key) {
+            let result = '';
+            for (let i = 0; i < text.length; i++) {
+                const charCode = text.charCodeAt(i) ^ key.charCodeAt(i % key.length);
+                result += String.fromCharCode(charCode);
+            }
+            return btoa(result); // Base64 encode
+        }
+
+        function decrypt(encrypted, key) {
+            const decoded = atob(encrypted); // Base64 decode
+            let result = '';
+            for (let i = 0; i < decoded.length; i++) {
+                const charCode = decoded.charCodeAt(i) ^ key.charCodeAt(i % key.length);
+                result += String.fromCharCode(charCode);
+            }
+            return result;
+        }
+
+        // Generate a random encryption key
+        function generateEncryptionKey() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let key = '';
+            for (let i = 0; i < 32; i++) {
+                key += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return key;
+        }
+
+        // Store the encryption key in session storage
+        const encryptionKey = sessionStorage.getItem('encryptionKey') || generateEncryptionKey();
+        sessionStorage.setItem('encryptionKey', encryptionKey);
+
+        let audioPlayer = null;
+        let currentAudioId = null;
+        let audioReady = false;
+        let audioPollInterval = null;
+        let isApiKeyVisible = false;
+        let lastResponseText = "";
+
+        function toggleApiKeyVisibility() {
+            const apiKeyInput = document.getElementById('apiKey');
+            const toggleButton = document.querySelector('.toggle-api-key');
+            
+            if (isApiKeyVisible) {
+                // Hide the API key
+                apiKeyInput.type = 'password';
+                toggleButton.textContent = 'Show';
+                // If we have an encrypted value, decrypt it
+                const encryptedValue = sessionStorage.getItem('encryptedApiKey');
+                if (encryptedValue) {
+                    apiKeyInput.value = decrypt(encryptedValue, encryptionKey);
+                }
+            } else {
+                // Show the API key
+                apiKeyInput.type = 'text';
+                toggleButton.textContent = 'Hide';
+                // Encrypt and store the current value
+                if (apiKeyInput.value) {
+                    const encryptedValue = encrypt(apiKeyInput.value, encryptionKey);
+                    sessionStorage.setItem('encryptedApiKey', encryptedValue);
+                }
+            }
+            
+            isApiKeyVisible = !isApiKeyVisible;
+        }
+
+        async function getMotivation() {
+            const userInput = document.getElementById('userInput').value;
+            const provider = document.getElementById('providerSelect').value;
+            const apiKeyInput = document.getElementById('apiKey');
+            let apiKey = apiKeyInput.value;
+            if (!isApiKeyVisible) {
+                const encryptedValue = sessionStorage.getItem('encryptedApiKey');
+                if (encryptedValue) {
+                    apiKey = decrypt(encryptedValue, encryptionKey);
+                }
+            }
+
+            if (!userInput.trim()) return;
+            if (!apiKey.trim()) {
+                alert('Please enter an API key');
+                return;
+            }
+
+            const loading = document.getElementById('loading');
+            const responseContainer = document.getElementById('responseContainer');
+            const responseText = document.getElementById('responseText');
+            const playButton = document.getElementById('playButton');
+            const stopButton = document.getElementById('stopButton');
+            const audioProgress = document.getElementById('audioProgress');
+            const audioControls = document.getElementById('audioControls');
+            const generateAudioButton = document.getElementById('generateAudioButton');
+
+            loading.style.display = 'block';
+            responseContainer.style.display = 'none';
+            playButton.disabled = true;
+            stopButton.disabled = true;
+            audioReady = false;
+            currentAudioId = null;
+            audioProgress.style.display = 'none';
+            audioControls.style.display = 'none';
+            generateAudioButton.style.display = 'none';
+
+            try {
+                const response = await fetch('/get_motivation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        text: userInput,
+                        provider: provider,
+                        api_key: apiKey
+                    }),
+                });
+
+                const data = await response.json();
+
+                // Save the last response text for audio generation
+                lastResponseText = data.text;
+
+                // Render Markdown using marked.js
+                responseText.innerHTML = marked.parse(data.text);
+
+                responseContainer.style.display = 'block';
+
+                // Show the Generate Audio button
+                generateAudioButton.style.display = 'inline-block';
+                generateAudioButton.disabled = false;
+                audioControls.style.display = 'none';
+                audioProgress.style.display = 'none';
+
+            } catch (error) {
+                console.error('Error:', error);
+                responseText.innerHTML = 'Sorry, something went wrong. Please try again.';
+                responseContainer.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        async function generateAudio() {
+            const audioProgress = document.getElementById('audioProgress');
+            const audioControls = document.getElementById('audioControls');
+            const generateAudioButton = document.getElementById('generateAudioButton');
+            const playButton = document.getElementById('playButton');
+            const stopButton = document.getElementById('stopButton');
+
+            generateAudioButton.disabled = true;
+            audioProgress.style.display = 'flex';
+            audioControls.style.display = 'none';
+
+            try {
+                const response = await fetch('/generate_audio', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ text: lastResponseText }),
+                });
+                const data = await response.json();
+                currentAudioId = data.audio_id;
+                pollAudioReady();
+            } catch (error) {
+                alert('Error generating audio.');
+                generateAudioButton.disabled = false;
+                audioProgress.style.display = 'none';
+            }
+        }
+
+        function pollAudioReady() {
+            const playButton = document.getElementById('playButton');
+            const stopButton = document.getElementById('stopButton');
+            const audioProgress = document.getElementById('audioProgress');
+            const audioControls = document.getElementById('audioControls');
+            audioPollInterval = setInterval(async () => {
+                const res = await fetch(`/audio_status/${currentAudioId}`);
+                const data = await res.json();
+                if (data.ready) {
+                    clearInterval(audioPollInterval);
+                    audioReady = true;
+                    playButton.textContent = "Play Audio";
+                    playButton.disabled = false;
+                    stopButton.disabled = false;
+                    audioProgress.style.display = 'none';
+                    audioControls.style.display = 'flex';
+                    document.getElementById('generateAudioButton').style.display = 'none';
+                }
+            }, 1000);
+        }
+
+        function playAudio() {
+            if (!currentAudioId || !audioReady) {
+                alert('Audio is not ready yet. Please wait...');
+                return;
+            }
+
+            if (audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+            }
+
+            audioPlayer = new Audio(`/audio/${currentAudioId}.mp3`);
+            audioPlayer.onerror = function(e) {
+                console.error('Error playing audio:', e);
+                alert('Error playing audio. Please try again.');
+            };
+            audioPlayer.play().catch(function(error) {
+                console.error('Error playing audio:', error);
+                alert('Error playing audio. Please try again.');
+            });
+        }
+
+        function stopAudio() {
+            if (audioPlayer) {
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+            }
+        }
+
+        // Initialize the API key input
+        document.addEventListener('DOMContentLoaded', function() {
+            const apiKeyInput = document.getElementById('apiKey');
+            apiKeyInput.type = 'password'; // Start with hidden API key
+        });
+    </script>
+</body>
+</html> 
