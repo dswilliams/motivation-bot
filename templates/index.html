@@ -269,12 +269,27 @@
                 <button onclick="playAudio()" id="playButton">Play Audio</button>
                 <button onclick="stopAudio()" id="stopButton">Stop Audio</button>
             </div>
-            <button id="generateAudioButton" style="display:none;" onclick="generateAudio()">Generate Audio</button>
+            <button id="generateAudioButton" onclick="generateAudio()">Generate Audio</button>
             <div id="responseText" class="typing-animation"></div>
         </div>
     </div>
 
     <script>
+        const isGenerateAudioEnabled = false; // Feature flag
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const generateAudioButton = document.getElementById('generateAudioButton');
+            
+            // Check the feature flag
+            console.log("Feature flag is set to:", isGenerateAudioEnabled);
+            if (isGenerateAudioEnabled) {
+                generateAudioButton.style.display = 'inline-block';
+                generateAudioButton.disabled = false;
+            } else {
+                generateAudioButton.style.display = 'none';
+            }
+        });
+
         // Simple encryption/decryption functions
         function encrypt(text, key) {
             let result = '';
@@ -378,7 +393,6 @@
             currentAudioId = null;
             audioProgress.style.display = 'none';
             audioControls.style.display = 'none';
-            generateAudioButton.style.display = 'none';
 
             try {
                 const response = await fetch('/get_motivation', {
@@ -403,11 +417,13 @@
 
                 responseContainer.style.display = 'block';
 
-                // Show the Generate Audio button
-                generateAudioButton.style.display = 'inline-block';
-                generateAudioButton.disabled = false;
-                audioControls.style.display = 'none';
-                audioProgress.style.display = 'none';
+                // Feature flag logic to control the visibility of the Generate Audio button
+                if (isGenerateAudioEnabled) {
+                    generateAudioButton.style.display = 'inline-block'; // Show the button
+                    generateAudioButton.disabled = false;
+                } else {
+                    generateAudioButton.style.display = 'none'; // Hide the button
+                }
 
             } catch (error) {
                 console.error('Error:', error);
