@@ -1,11 +1,6 @@
-[build]
-  # command and publish will be set in Netlify UI
-  # base will be set in Netlify UI
-
 [functions]
-  # directory will be set in Netlify UI
-  node_bundler = "esbuild" # For Next.js functions
-  python_version = "3.9" # Specify Python version for Netlify Functions
+  node_bundler = "esbuild"
+  python_version = "3.9"
 
 [[redirects]]
   from = "/api/*"
