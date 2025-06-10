@@ -1,5 +1,5 @@
 flask==3.0.2
-requests==2.31.0
+requests==2.32.4
 markdown==3.5.2
 python-dotenv==1.0.1
 openai==1.12.0
