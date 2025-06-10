@@ -1,7 +1,7 @@
 [build]
   command = "cd web && npm install && npm run build"
   publish = "web/.next"
-  base = "/"
+  base = "web"
 
 [functions]
   directory = "netlify/functions"
