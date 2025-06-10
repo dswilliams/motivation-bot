@@ -1,10 +1,10 @@
 [build]
-  command = "cd web && npm install && npm run build"
-  publish = "web/.next"
+  command = "npm install && npm run build"
+  publish = ".next"
   base = "web"
 
 [functions]
-  directory = "netlify/functions"
+  directory = "../netlify/functions"
   node_bundler = "esbuild" # For Next.js functions
   python_version = "3.9" # Specify Python version for Netlify Functions
 
