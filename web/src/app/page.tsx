@@ -5,14 +5,12 @@ import { useState } from "react";
 
 export default function Home() {
   const [provider, setProvider] = useState("openai");
-  const [apiKey, setApiKey] = useState("");
 
   // Detect local mode (dev) vs. prod (GitHub Pages)
   const localMode = typeof window !== "undefined" && window.location.hostname === "localhost";
 
-  const handleProviderChange = (prov: string, key: string) => {
+  const handleProviderChange = (prov: string) => {
     setProvider(prov);
-    setApiKey(key);
   };
 
   return (
@@ -22,7 +20,7 @@ export default function Home() {
         How are you feeling today? Get a motivational boost, actionable steps, or a fun fact to celebrate your mood. Powered by science and AI.
       </p>
       <ProviderSelector onProviderChange={handleProviderChange} />
-      <MotivationForm provider={provider} apiKey={apiKey} localMode={localMode} />
+      <MotivationForm provider={provider} localMode={localMode} />
       <footer className="mt-12 text-sm text-blue-700 opacity-70">&copy; {new Date().getFullYear()} Motivation Bot</footer>
     </div>
   );

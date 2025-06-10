@@ -1,13 +1,13 @@
 import os
-from flask import Flask, request, jsonify
+import json
 import requests
 import markdown
+import re
 from dotenv import load_dotenv
 import google.generativeai as genai
 from openai import OpenAI
 from huggingface_hub import InferenceClient
 import logging
-import re
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -15,8 +15,6 @@ logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv()
-
-app = Flask(__name__)
 
 # API configurations
 PERPLEXITY_API_KEY = os.getenv('PERPLEXITY_API_KEY')
@@ -81,43 +79,57 @@ def get_motivational_response(user_input, provider):
         logger.error(f"Error getting response from {provider}: {str(e)}")
         return f"Error getting response from {provider}: {str(e)}"
 
-@app.route('/get_motivation', methods=['POST'])
-def get_motivation():
-    user_input = request.json.get('text', '')
-    provider = request.json.get('provider', 'perplexity')
-    api_key = request.json.get('api_key', '')
-
-    # Set the API key for the selected provider
-    if provider == 'perplexity':
-        global PERPLEXITY_API_KEY
-        PERPLEXITY_API_KEY = api_key
-    elif provider == 'openai':
-        global OPENAI_API_KEY
-        OPENAI_API_KEY = api_key
-        global openai_client
-        openai_client = OpenAI(api_key=api_key)
-    elif provider == 'gemini':
-        global GOOGLE_API_KEY
-        GOOGLE_API_KEY = api_key
-        genai.configure(api_key=api_key)
-    elif provider == 'huggingface':
-        global HUGGINGFACE_API_KEY
-        HUGGINGFACE_API_KEY = api_key
-        global huggingface_client
-        huggingface_client = InferenceClient(token=api_key)
-
+def handler(event, context):
     try:
-        response = get_motivational_response(user_input, provider)
+        body = json.loads(event['body'])
+        user_input = body.get('text', '')
+        provider = body.get('provider', 'perplexity')
+        api_key = body.get('api_key', '')
+
+        # Set the API key for the selected provider
+        # Note: In a real Netlify Function, it's better to use Netlify Environment Variables
+        # for API keys rather than passing them in the request body.
+        # For this example, we'll use the passed key for demonstration.
+        if provider == 'perplexity':
+            global PERPLEXITY_API_KEY
+            PERPLEXITY_API_KEY = api_key
+        elif provider == 'openai':
+            global OPENAI_API_KEY
+            OPENAI_API_KEY = api_key
+            global openai_client
+            openai_client = OpenAI(api_key=api_key)
+        elif provider == 'gemini':
+            global GOOGLE_API_KEY
+            GOOGLE_API_KEY = api_key
+            genai.configure(api_key=api_key)
+        elif provider == 'huggingface':
+            global HUGGINGFACE_API_KEY
+            HUGGINGFACE_API_KEY = api_key
+            global huggingface_client
+            huggingface_client = InferenceClient(token=api_key)
+
+        response_text = get_motivational_response(user_input, provider)
+        response_text = re.sub(r'\[\d+\]', '', response_text) # Remove reference markers
+
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*', # CORS for local testing
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type'
+            },
+            'body': json.dumps({'text': response_text})
+        }
     except Exception as e:
-        response = f"Error: {str(e)}"
-
-    # Remove reference markers like [1], [2], etc.
-    response = re.sub(r'\[\d+\]', '', response)
-
-    # No audio generation here!
-    return jsonify({
-        'text': response
-    })
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+        logger.error(f"Error in Netlify function: {str(e)}")
+        return {
+            'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type'
+            },
+            'body': json.dumps({'error': str(e)})
+        }

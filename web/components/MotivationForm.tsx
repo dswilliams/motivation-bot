@@ -1,62 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { LLM_PROVIDERS } from "../utils/llmProviders";
 
 interface MotivationFormProps {
   provider: string;
-  apiKey: string;
   localMode: boolean;
 }
 
-function isPositiveFeeling(feeling: string) {
-  // Simple check for positive words; can be improved
-  const positiveWords = ["good", "great", "happy", "excited", "joy", "love", "awesome", "fantastic", "amazing", "proud", "confident", "positive", "celebrate"];
-  return positiveWords.some(word => feeling.toLowerCase().includes(word));
-}
-
-async function fetchFunFact(): Promise<string> {
-  // Use a public API for 'this day in history' or fallback to a static fact
-  try {
-    const res = await fetch("https://history.muffinlabs.com/date");
-    const data = await res.json();
-    if (data && data.data && data.data.Events && data.data.Events.length > 0) {
-      const event = data.data.Events[Math.floor(Math.random() * data.data.Events.length)];
-      return `Fun fact: On this day in ${event.year}, ${event.text}`;
-    }
-  } catch (e) {}
-  return "Fun fact: Did you know honey never spoils? Archaeologists have found 3000-year-old honey in Egyptian tombs that is still edible!";
-}
-
-function preprocessMarkdown(text: string): string {
-  // Replace single line breaks between non-empty lines with double line breaks
-  return text.replace(/([^\n])\n([^\n])/g, "$1\n\n$2");
-}
-
-function getMotivationalVoice(): SpeechSynthesisVoice | null {
-  const voices = window.speechSynthesis.getVoices();
-  // Prefer Google US English
-  let voice = voices.find(v => v.name.includes("Google US English"));
-  // Fallback to first English voice
-  if (!voice) voice = voices.find(v => v.lang.startsWith("en"));
-  return voice || null;
-}
-
-export default function MotivationForm({ provider, apiKey, localMode }: MotivationFormProps) {
+export default function MotivationForm({ provider, localMode }: MotivationFormProps) {
   const [feeling, setFeeling] = useState("");
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showOutput, setShowOutput] = useState(false);
-  const [speaking, setSpeaking] = useState(false);
-  const [voiceReady, setVoiceReady] = useState(false);
-
-  // Ensure voices are loaded
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.speechSynthesis.onvoiceschanged = () => setVoiceReady(true);
-      setVoiceReady(true);
-    }
-  }, []);
 
   const getMotivation = async (feeling: string) => {
     setLoading(true);
@@ -64,22 +20,12 @@ export default function MotivationForm({ provider, apiKey, localMode }: Motivati
     setError("");
     setShowOutput(false);
 
-    // If positive, celebrate and add a fun fact
-    if (isPositiveFeeling(feeling)) {
-      const funFact = await fetchFunFact();
-      setOutput(`🎉 That's wonderful! Let's celebrate your positive mood. ${funFact}`);
-      setLoading(false);
-      setTimeout(() => setShowOutput(true), 100); // Animate reveal
-      return;
-    }
-
     // Compose prompt
     const prompt = `The user is feeling: "${feeling}". Respond with a motivational message and 2-3 actionable steps they can take today. If the user expresses positive feelings, celebrate and include a fun analogy or a fun fact about this day in history. Limit your response to 500 words or less.`;
 
-    // Prepare request for each provider
-    const config = (LLM_PROVIDERS as any)[provider];
-    const endpoint = config.endpoint;
-    const headers = config.headers(apiKey);
+    // Prepare request for Netlify Function
+    const endpoint = "/.netlify/functions/get_motivation";
+    const headers = { "Content-Type": "application/json" };
     let body: any = {};
 
     if (provider === "openai" || provider === "mistral") {
@@ -120,18 +66,11 @@ export default function MotivationForm({ provider, apiKey, localMode }: Motivati
       const res = await fetch(endpoint, {
         method: "POST",
         headers,
-        body: JSON.stringify(body),
+        body: JSON.stringify({ text: prompt, provider: provider }), // Removed apiKey from body
       });
       if (!res.ok) throw new Error(`API error: ${res.status}`);
       const data = await res.json();
-      let text = "";
-      if (provider === "openai" || provider === "mistral" || provider === "perplexity") {
-        text = data.choices?.[0]?.message?.content || "No response.";
-      } else if (provider === "huggingface") {
-        text = data[0]?.generated_text || "No response.";
-      } else if (provider === "gemini") {
-        text = data.candidates?.[0]?.content?.parts?.[0]?.text || "No response.";
-      }
+      let text = data.text || "No response."; // Netlify Function returns { text: "..." }
       setOutput(text);
       setTimeout(() => setShowOutput(true), 100); // Animate reveal
     } catch (e: any) {
@@ -146,18 +85,6 @@ export default function MotivationForm({ provider, apiKey, localMode }: Motivati
     if (feeling.trim()) {
       getMotivation(feeling);
     }
-  };
-
-  const handleSpeak = () => {
-    if (!output) return;
-    setSpeaking(true);
-    const utterance = new window.SpeechSynthesisUtterance(output);
-    const voice = getMotivationalVoice();
-    if (voice) utterance.voice = voice;
-    utterance.pitch = 1.15;
-    utterance.rate = 1.05;
-    utterance.onend = () => setSpeaking(false);
-    window.speechSynthesis.speak(utterance);
   };
 
   return (
@@ -188,20 +115,11 @@ export default function MotivationForm({ provider, apiKey, localMode }: Motivati
           className="flex flex-col items-center justify-center w-full max-w-3xl mx-auto mt-6 p-8 bg-gradient-to-br from-blue-100 via-white to-cyan-100 rounded-2xl shadow-xl opacity-0 animate-bounce-in"
           style={{ animation: 'bounceIn 0.9s cubic-bezier(.68,-0.55,.27,1.55) forwards' }}
         >
-          {output && (
-            <button
-              className="mb-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition disabled:opacity-50 font-bold text-lg shadow"
-              onClick={handleSpeak}
-              disabled={speaking || !voiceReady}
-            >
-              {speaking ? "Speaking..." : "🔊 Speak"}
-            </button>
-          )}
           <div className="w-full">
             {error && <div className="text-red-600 font-semibold">{error}</div>}
             {output && (
               <div className="prose max-w-none text-gray-900 text-xl leading-relaxed">
-                <ReactMarkdown>{preprocessMarkdown(output)}</ReactMarkdown>
+                <ReactMarkdown>{output}</ReactMarkdown>
               </div>
             )}
           </div>
@@ -217,4 +135,4 @@ export default function MotivationForm({ provider, apiKey, localMode }: Motivati
       `}</style>
     </>
   );
-} 
+}
