@@ -59,19 +59,29 @@
             display: flex;
             gap: 1rem;
             margin-bottom: 1rem;
+            align-items: center;
+            width: 100%;
         }
 
-        select, input {
+        select {
+            flex: 1;
             padding: 0.75rem;
             border: 2px solid var(--border-color);
             border-radius: 8px;
             font-size: 1rem;
-            width: 100%;
+            background-color: white;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .api-key-container {
             position: relative;
             width: 100%;
+            flex: 2;
         }
 
         .api-key-input {
@@ -80,6 +90,7 @@
             background-color: #f8fafc;
             border: 2px solid var(--border-color);
             padding-right: 40px; /* Space for the toggle button */
+            width: 100%;
         }
 
         .toggle-api-key {
@@ -240,14 +251,14 @@
         
         <div class="input-container">
             <div class="provider-selection">
-                <select id="providerSelect">
+                <select id="providerSelect" style="flex: 1;">
                     <option value="perplexity">Perplexity</option>
                     <option value="openai">OpenAI</option>
                     <option value="gemini">Google Gemini</option>
                     <option value="huggingface">Hugging Face</option>
                 </select>
-                <div class="api-key-container">
-                    <input type="text" 
+                <div class="api-key-container" style="flex: 2;">
+                    <input type="password" 
                            id="apiKey" 
                            class="api-key-input" 
                            placeholder="Enter API Key" 
