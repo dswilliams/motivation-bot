@@ -2,12 +2,16 @@ import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { LLM_PROVIDERS } from "../utils/llmProviders";
 
+// Add index signature for dynamic access
+const PROVIDERS: { [key: string]: any } = LLM_PROVIDERS;
+
 interface MotivationFormProps {
   provider: string;
+  apiKey: string;
   localMode: boolean;
 }
 
-export default function MotivationForm({ provider, localMode }: MotivationFormProps) {
+export default function MotivationForm({ provider, apiKey, localMode }: MotivationFormProps) {
   const [feeling, setFeeling] = useState("");
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -24,8 +28,12 @@ export default function MotivationForm({ provider, localMode }: MotivationFormPr
     const prompt = `The user is feeling: "${feeling}". Respond with a motivational message and 2-3 actionable steps they can take today. If the user expresses positive feelings, celebrate and include a fun analogy or a fun fact about this day in history. Limit your response to 500 words or less.`;
 
     // Prepare request for Netlify Function
-    const endpoint = "/.netlify/functions/get_motivation";
-    const headers = { "Content-Type": "application/json" };
+    const endpoint = "/api/get_motivation";
+    const currentProvider = PROVIDERS[provider];
+    const headers = {
+      "Content-Type": "application/json",
+      ...currentProvider.headers(apiKey), // Add API key to headers
+    };
     let body: any = {};
 
     if (provider === "openai" || provider === "mistral") {
@@ -66,7 +74,7 @@ export default function MotivationForm({ provider, localMode }: MotivationFormPr
       const res = await fetch(endpoint, {
         method: "POST",
         headers,
-        body: JSON.stringify({ text: prompt, provider: provider }), // Removed apiKey from body
+        body: JSON.stringify({ text: prompt, provider: provider, apiKey: apiKey }),
       });
       if (!res.ok) throw new Error(`API error: ${res.status}`);
       const data = await res.json();

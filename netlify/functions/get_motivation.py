@@ -16,18 +16,18 @@ logger = logging.getLogger(__name__)
 # Load environment variables
 load_dotenv()
 
-# API configurations
-PERPLEXITY_API_KEY = os.getenv('PERPLEXITY_API_KEY')
-OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
-HUGGINGFACE_API_KEY = os.getenv('HUGGINGFACE_API_KEY')
+# API configurations (These will now be passed dynamically)
+# PERPLEXITY_API_KEY = os.getenv('PERPLEXITY_API_KEY')
+# OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+# GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+# HUGGINGFACE_API_KEY = os.getenv('HUGGINGFACE_API_KEY')
 
-# Initialize clients
-openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
-genai.configure(api_key=GOOGLE_API_KEY) if GOOGLE_API_KEY else None
-huggingface_client = InferenceClient(token=HUGGINGFACE_API_KEY) if HUGGINGFACE_API_KEY else None
+# Initialize clients (These will be initialized with passed API keys)
+# openai_client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
+# genai.configure(api_key=GOOGLE_API_KEY) if GOOGLE_API_KEY else None
+# huggingface_client = InferenceClient(token=HUGGINGFACE_API_KEY) if HUGGINGFACE_API_KEY else None
 
-def get_motivational_response(user_input, provider):
+def get_motivational_response(user_input, provider, api_key):
     """Get a motivational response from the selected LLM provider"""
     prompt = f"""Please provide a motivational and actionable response to the following situation, limited to 500 words:
     {user_input}
@@ -43,7 +43,7 @@ def get_motivational_response(user_input, provider):
     try:
         if provider == 'perplexity':
             headers = {
-                "Authorization": f"Bearer {PERPLEXITY_API_KEY}",
+                "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json"
             }
             data = {
@@ -55,17 +55,33 @@ def get_motivational_response(user_input, provider):
             response.raise_for_status()
             return response.json()['choices'][0]['message']['content']
         elif provider == 'openai':
+            openai_client = OpenAI(api_key=api_key)
             response = openai_client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=1000
             )
             return response.choices[0].message.content
+        elif provider == 'mistral':
+            headers = {
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            }
+            data = {
+                "model": "mistral-tiny", # or appropriate model for mistral
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 1000
+            }
+            response = requests.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=data)
+            response.raise_for_status()
+            return response.json()['choices'][0]['message']['content']
         elif provider == 'gemini':
+            genai.configure(api_key=api_key)
             model = genai.GenerativeModel('gemini-pro')
             response = model.generate_content(prompt)
             return response.text
         elif provider == 'huggingface':
+            huggingface_client = InferenceClient(token=api_key)
             response = huggingface_client.text_generation(
                 prompt,
                 max_new_tokens=1000,
@@ -84,31 +100,9 @@ def handler(event, context):
         body = json.loads(event['body'])
         user_input = body.get('text', '')
         provider = body.get('provider', 'perplexity')
-        api_key = body.get('api_key', '')
+        api_key = body.get('apiKey', '') # Changed from 'api_key' to 'apiKey' to match frontend
 
-        # Set the API key for the selected provider
-        # Note: In a real Netlify Function, it's better to use Netlify Environment Variables
-        # for API keys rather than passing them in the request body.
-        # For this example, we'll use the passed key for demonstration.
-        if provider == 'perplexity':
-            global PERPLEXITY_API_KEY
-            PERPLEXITY_API_KEY = api_key
-        elif provider == 'openai':
-            global OPENAI_API_KEY
-            OPENAI_API_KEY = api_key
-            global openai_client
-            openai_client = OpenAI(api_key=api_key)
-        elif provider == 'gemini':
-            global GOOGLE_API_KEY
-            GOOGLE_API_KEY = api_key
-            genai.configure(api_key=api_key)
-        elif provider == 'huggingface':
-            global HUGGINGFACE_API_KEY
-            HUGGINGFACE_API_KEY = api_key
-            global huggingface_client
-            huggingface_client = InferenceClient(token=api_key)
-
-        response_text = get_motivational_response(user_input, provider)
+        response_text = get_motivational_response(user_input, provider, api_key)
         response_text = re.sub(r'\[\d+\]', '', response_text) # Remove reference markers
 
         return {

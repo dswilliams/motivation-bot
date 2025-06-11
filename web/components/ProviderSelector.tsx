@@ -10,17 +10,26 @@ interface ProviderConfig {
 
 interface ProviderSelectorProps {
   onProviderChange: (provider: string) => void;
+  onApiKeyChange: (apiKey: string) => void;
 }
 
 // Add index signature for dynamic access
 const PROVIDERS: { [key: string]: ProviderConfig } = LLM_PROVIDERS;
 
-export default function ProviderSelector({ onProviderChange }: ProviderSelectorProps) {
+export default function ProviderSelector({ onProviderChange, onApiKeyChange }: ProviderSelectorProps) {
   const [provider, setProvider] = useState("openai");
+  const [apiKey, setApiKey] = useState("");
 
   const handleProviderChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setProvider(e.target.value);
     onProviderChange(e.target.value);
+    setApiKey(""); // Clear API key when provider changes
+    onApiKeyChange("");
+  };
+
+  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setApiKey(e.target.value);
+    onApiKeyChange(e.target.value);
   };
 
   return (
@@ -37,6 +46,19 @@ export default function ProviderSelector({ onProviderChange }: ProviderSelectorP
           ))}
         </select>
       </label>
+
+      {provider && PROVIDERS[provider]?.apiKeyLabel && (
+        <label className="font-semibold text-gray-700">
+          {PROVIDERS[provider].apiKeyLabel}:
+          <input
+            type="password"
+            className="block w-full mt-1 p-2 border border-gray-300 rounded"
+            value={apiKey}
+            onChange={handleApiKeyChange}
+            placeholder={`Enter your ${PROVIDERS[provider].apiKeyLabel}`}
+          />
+        </label>
+      )}
     </div>
   );
 }
