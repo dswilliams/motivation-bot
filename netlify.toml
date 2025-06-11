@@ -1,6 +1,8 @@
 [functions]
   node_bundler = "esbuild"
-  python_version = "3.9"
+
+  [functions.python_version]
+    version = "3.9"
 
 [[redirects]]
   from = "/api/*"
