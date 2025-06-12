@@ -51,8 +51,11 @@ def get_motivational_response(user_input, provider, api_key):
                 "messages": [{"role": "user", "content": prompt}],
                 "max_tokens": 1000
             }
+            logger.debug(f"Perplexity API request headers: {headers}")
+            logger.debug(f"Perplexity API request data: {data}")
             response = requests.post("https://api.perplexity.ai/chat/completions", headers=headers, json=data)
             response.raise_for_status()
+            logger.debug(f"Perplexity API response: {response.json()}")
             return response.json()['choices'][0]['message']['content']
         elif provider == 'openai':
             openai_client = OpenAI(api_key=api_key)
@@ -91,6 +94,11 @@ def get_motivational_response(user_input, provider, api_key):
             return response
         else:
             return "Invalid provider selected"
+    except requests.exceptions.HTTPError as http_err:
+        logger.error(f"HTTP error for {provider}: {http_err}")
+        logger.error(f"Response status code: {http_err.response.status_code}")
+        logger.error(f"Response body: {http_err.response.text}")
+        return f"HTTP error from {provider}: {http_err.response.text}"
     except Exception as e:
         logger.error(f"Error getting response from {provider}: {str(e)}")
         return f"Error getting response from {provider}: {str(e)}"
@@ -100,7 +108,9 @@ def handler(event, context):
         body = json.loads(event['body'])
         user_input = body.get('text', '')
         provider = body.get('provider', 'perplexity')
-        api_key = body.get('apiKey', '') # Changed from 'api_key' to 'apiKey' to match frontend
+        api_key = body.get('apiKey', '')
+        logger.debug(f"Received request for provider: {provider}, API Key (first 5 chars): {api_key[:5]}...")
+        logger.debug(f"User input: {user_input}")
 
         response_text = get_motivational_response(user_input, provider, api_key)
         response_text = re.sub(r'\[\d+\]', '', response_text) # Remove reference markers

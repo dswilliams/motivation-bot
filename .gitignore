@@ -11,3 +11,6 @@ build/
 
 # Ignore MP3 files
 *.mp3
+
+# Local Netlify folder
+.netlify
