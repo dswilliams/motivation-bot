@@ -9,8 +9,8 @@
   status = 200
 
 [build]
-  command = "cd web && npm install && npm run build"
-  publish = "web/.next"
+  command = "npm install && npm run build"
+  publish = ".next"
   base = "web"
 
 [[plugins]]
