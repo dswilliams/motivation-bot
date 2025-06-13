@@ -23,6 +23,13 @@
 
 body {
   background: var(--background);
-  color: var(--foreground);
   font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+/* Force padding for input fields to override aggressive resets */
+input, select, textarea {
+  padding-left: 12px !important; /* Adjusted from px-8 equivalent */
+  padding-right: 12px !important; /* Adjusted from px-8 equivalent */
+  padding-top: 8px !important;    /* py-2 equivalent */
+  padding-bottom: 8px !important; /* py-2 equivalent */
 }

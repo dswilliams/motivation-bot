@@ -33,32 +33,36 @@ export default function ProviderSelector({ onProviderChange, onApiKeyChange }: P
   };
 
   return (
-    <div className="flex flex-col gap-4 p-4 bg-white rounded-lg shadow-md w-full max-w-xl mx-auto mt-6">
-      <label className="font-semibold text-gray-700">
-        LLM Provider:
-        <select
-          className="block w-full mt-1 p-2 border border-gray-300 rounded"
-          value={provider}
-          onChange={handleProviderChange}
-        >
-          {Object.entries(PROVIDERS).map(([key, { name }]) => (
-            <option key={key} value={key}>{name}</option>
-          ))}
-        </select>
-      </label>
-
-      {provider && PROVIDERS[provider]?.apiKeyLabel && (
-        <label className="font-semibold text-gray-700">
-          {PROVIDERS[provider].apiKeyLabel}:
-          <input
-            type="password"
-            className="block w-full mt-1 p-2 border border-gray-300 rounded"
-            value={apiKey}
-            onChange={handleApiKeyChange}
-            placeholder={`Enter your ${PROVIDERS[provider].apiKeyLabel}`}
-          />
-        </label>
-      )}
+    <div className="bg-white border border-gray-200 rounded-xl shadow p-8 w-full max-w-3xl mx-auto mb-8">
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <label htmlFor="provider-select" className="font-bold text-gray-800 text-base mb-1">LLM Provider</label>
+          <select
+            id="provider-select"
+            className="block w-full !px-8 !py-2 border-2 border-gray-500 rounded focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-base"
+            value={provider}
+            onChange={handleProviderChange}
+          >
+            {Object.entries(PROVIDERS).map(([key, { name }]) => (
+              <option key={key} value={key}>{name}</option>
+            ))}
+          </select>
+        </div>
+        {provider && PROVIDERS[provider]?.apiKeyLabel && (
+          <div className="flex flex-col gap-2">
+            <label htmlFor="api-key-input" className="font-bold text-gray-800 text-base mb-1">{PROVIDERS[provider].apiKeyLabel}</label>
+            <input
+              id="api-key-input"
+              type="password"
+              className="block w-full !px-8 !py-2 border-2 border-gray-500 rounded focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-base"
+              value={apiKey}
+              onChange={handleApiKeyChange}
+              placeholder={`Enter your ${PROVIDERS[provider].apiKeyLabel}`}
+              autoComplete="off"
+            />
+          </div>
+        )}
+      </div>
     </div>
   );
 }

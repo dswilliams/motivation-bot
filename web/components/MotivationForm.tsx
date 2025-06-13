@@ -97,21 +97,22 @@ export default function MotivationForm({ provider, apiKey, localMode }: Motivati
 
   return (
     <>
-      <div className="flex flex-col gap-6 p-6 bg-white rounded-lg shadow-md w-full max-w-xl mx-auto mt-8">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <label className="font-semibold text-gray-700">
-            How are you feeling today?
+      <div className="bg-white border border-gray-200 rounded-xl shadow p-8 w-full max-w-3xl mx-auto mb-8">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6 w-full">
+          <div className="flex flex-col gap-2">
+            <label htmlFor="feeling-textarea" className="font-bold text-gray-800 text-base mb-1">How are you feeling today?</label>
             <textarea
-              className="block w-full mt-1 p-2 border border-gray-300 rounded resize-none min-h-[60px]"
+              id="feeling-textarea"
+              className="block w-full !px-8 !py-2 border-2 border-gray-500 rounded focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 text-base resize-none min-h-[80px] placeholder:text-gray-400"
               value={feeling}
               onChange={(e) => setFeeling(e.target.value)}
               placeholder="Type your feelings here..."
               required
             />
-          </label>
+          </div>
           <button
             type="submit"
-            className="bg-blue-600 text-white font-semibold py-2 px-4 rounded hover:bg-blue-700 transition"
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded transition text-base focus:outline-none focus:ring-2 focus:ring-blue-500 mt-4"
             disabled={loading}
           >
             {loading ? "Thinking..." : "Get Motivation"}
@@ -119,28 +120,17 @@ export default function MotivationForm({ provider, apiKey, localMode }: Motivati
         </form>
       </div>
       {showOutput && (
-        <div
-          className="flex flex-col items-center justify-center w-full max-w-3xl mx-auto mt-6 p-8 bg-gradient-to-br from-blue-100 via-white to-cyan-100 rounded-2xl shadow-xl opacity-0 animate-bounce-in"
-          style={{ animation: 'bounceIn 0.9s cubic-bezier(.68,-0.55,.27,1.55) forwards' }}
-        >
+        <div className="bg-blue-50 rounded-xl shadow p-8 w-full max-w-2xl mx-auto mt-8">
           <div className="w-full">
-            {error && <div className="text-red-600 font-semibold">{error}</div>}
+            {error && <div className="text-red-600 font-semibold text-lg mb-2">{error}</div>}
             {output && (
-              <div className="prose max-w-none text-gray-900 text-xl leading-relaxed">
+              <div className="prose max-w-none text-blue-900 text-xl leading-relaxed">
                 <ReactMarkdown>{output}</ReactMarkdown>
               </div>
             )}
           </div>
         </div>
       )}
-      <style jsx global>{`
-        @keyframes bounceIn {
-          0% { opacity: 0; transform: scale(0.8) translateY(40px); }
-          60% { opacity: 1; transform: scale(1.05) translateY(-10px); }
-          80% { transform: scale(0.97) translateY(2px); }
-          100% { opacity: 1; transform: scale(1) translateY(0); }
-        }
-      `}</style>
     </>
   );
 }
