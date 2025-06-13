@@ -1,5 +1,6 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
+from flask_cors import CORS
 import requests
 import markdown
 from dotenv import load_dotenv
@@ -17,6 +18,30 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 app = Flask(__name__)
+
+# Enable CORS for all routes
+CORS(app, resources={
+    r"/*": {
+        "origins": ["http://localhost:3000", "http://localhost:3001"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"],
+        "supports_credentials": True
+    }
+})
+
+@app.before_request
+def log_request_info():
+    logger.debug('Headers: %s', request.headers)
+    logger.debug('Body: %s', request.get_data())
+
+@app.after_request
+def after_request(response):
+    logger.debug('Response headers: %s', response.headers)
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
 
 # API configurations
 PERPLEXITY_API_KEY = os.getenv('PERPLEXITY_API_KEY')
@@ -81,8 +106,16 @@ def get_motivational_response(user_input, provider):
         logger.error(f"Error getting response from {provider}: {str(e)}")
         return f"Error getting response from {provider}: {str(e)}"
 
-@app.route('/get_motivation', methods=['POST'])
+@app.route('/get_motivation', methods=['POST', 'OPTIONS'])
 def get_motivation():
+    if request.method == 'OPTIONS':
+        response = make_response()
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
+        
     user_input = request.json.get('text', '')
     provider = request.json.get('provider', 'perplexity')
     api_key = request.json.get('api_key', '')

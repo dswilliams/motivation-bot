@@ -28,7 +28,7 @@ export default function MotivationForm({ provider, apiKey, localMode }: Motivati
     const prompt = `The user is feeling: "${feeling}". Respond with a motivational message and 2-3 actionable steps they can take today. If the user expresses positive feelings, celebrate and include a fun analogy or a fun fact about this day in history. Limit your response to 500 words or less.`;
 
     // Prepare request for Netlify Function
-    const endpoint = "http://localhost:5000/api/get_motivation"; // Direct call to Flask server for debugging
+    const endpoint = localMode ? "http://localhost:3001/api/get_motivation" : "/.netlify/functions/get_motivation";
     const currentProvider = PROVIDERS[provider];
     const headers = {
       "Content-Type": "application/json",
@@ -74,7 +74,7 @@ export default function MotivationForm({ provider, apiKey, localMode }: Motivati
       const res = await fetch(endpoint, {
         method: "POST",
         headers,
-        body: JSON.stringify({ text: prompt, provider: provider, apiKey: apiKey }),
+        body: JSON.stringify({ text: prompt, provider: provider, api_key: apiKey }),
       });
       if (!res.ok) throw new Error(`API error: ${res.status}`);
       const data = await res.json();
