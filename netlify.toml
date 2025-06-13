@@ -9,5 +9,9 @@
   status = 200
 
 [build]
+  command = "cd web && npm install && npm run build"
   publish = "web/.next"
-  base = "web/"
+  base = "web"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
